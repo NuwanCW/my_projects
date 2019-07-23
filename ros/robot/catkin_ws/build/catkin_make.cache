@@ -1,2 +1,2 @@
-lino_msgs:lino_pid:lino_visualize:m2wr_description:mybot_control:mybot_description:mybot_gazebo:mybot_navigation:rplidar_ros
--DCATKIN_DEVEL_PREFIX=/home/withana/catkin_ws/devel -DCMAKE_INSTALL_PREFIX=/home/withana/catkin_ws/install -G Unix Makefiles
+m2wr_description:mybot_control:mybot_description:mybot_gazebo:mybot_navigation:openslam_gmapping:slam_gmapping/gmapping:slam_gmapping/slam_gmapping
+-DCATKIN_DEVEL_PREFIX=/home/nuwan/projects/ros/robot/catkin_ws/devel -DCMAKE_INSTALL_PREFIX=/home/nuwan/projects/ros/robot/catkin_ws/install -G Unix Makefiles

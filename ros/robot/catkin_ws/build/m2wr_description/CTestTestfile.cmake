@@ -1,6 +1,6 @@
 # CMake generated Testfile for 
-# Source directory: /home/withana/catkin_ws/src/m2wr_description
-# Build directory: /home/withana/catkin_ws/build/m2wr_description
+# Source directory: /home/nuwan/projects/ros/robot/catkin_ws/src/m2wr_description
+# Build directory: /home/nuwan/projects/ros/robot/catkin_ws/build/m2wr_description
 # 
 # This file includes the relevant testing commands required for 
 # testing this directory and lists subdirectories to be tested as well.

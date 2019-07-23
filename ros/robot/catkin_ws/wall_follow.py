@@ -1,10 +1,9 @@
 #! /usr/bin/env python
-from scipy import spatial
+
 # ROS imports
 import rospy
 from sensor_msgs.msg import LaserScan
 from geometry_msgs.msg import Twist
-import numpy as np
 #from tf import transformations
 #from datetime import datetime
 
@@ -12,26 +11,25 @@ import numpy as np
 import random
 import math
 import time
-global r,wall_dist
+
 hz = 20                     # Cycle Frequency
 loop_index = 0              # Number of sampling cycles
 loop_index_outer_corner = 0 # Loop index when the outer corner is detected
 loop_index_inner_corner = 0 # Loop index when the inner corner is detected
 inf = 5                     # Limit to Laser sensor range in meters, all distances above this value are 
-r=0                            #      considered out of sensor range
-wall_dist = 0.32             # Distance desired from the wall
-max_speed = 0.15             # Maximum speed of the robot on meters/seconds
-p = 3#15                      # Proportional constant for controller  
-d = 1                       # Derivative constant for controller 
+                            #      considered out of sensor range
+wall_dist = 0.4             # Distance desired from the wall
+max_speed = 0.3             # Maximum speed of the robot on meters/seconds
+p = 15                      # Proportional constant for controller  
+d = 0                       # Derivative constant for controller 
 angle = 1                   # Proportional constant for angle controller (just simple P controller)
-# direction = -1              # 1 for wall on the left side of the robot (-1 for the right side)
+direction = -1              # 1 for wall on the left side of the robot (-1 for the right side)
 e = 0                       # Diference between current wall measurements and previous one
 angle_min = 0               # Angle, at which was measured the shortest distance between the robot and a wall
 dist_front = 0              # Measured front distance
 diff_e = 0                  # Difference between current error and previous one
 dist_min = 0                # Minimum measured distance
-global direction,regions_
-direction = 1
+
 # Time when the last outer corner; direction and inner corner were detected or changed.
 last_outer_corner_detection_time = time.time()
 last_change_direction_time = time.time()
@@ -59,7 +57,7 @@ last_vel = [random.uniform(0.1,0.3),  random.uniform(-0.3,0.3)]
 wall_found =0
 
 #Robot state machines
-state_ = 0
+state_ = 1
 state_dict_ = {
     0: 'random wandering',
     1: 'following wall',
@@ -86,7 +84,6 @@ def clbk_laser(msg):
     dist_front = msg.ranges[size/2]
     diff_e = min((dist_min - wall_dist) - e, 100)
     e = min(dist_min - wall_dist, 100)
-    # print("mn_index{},max_index{},angle_min{},dist_min{},dist_front{},diff_e{},e{}".format(min_index,max_index,angle_min,dist_min,dist_front,diff_e,e))
 
     # Determination of minimum distances in each region
     regions_ = {
@@ -99,7 +96,7 @@ def clbk_laser(msg):
         'bleft':   min(min(msg.ranges[315:360]), inf),
     }
     #rospy.loginfo(regions_)
-
+# updated_boundry,token=straight_follow(transformations,True,cx,cy,x_dis,y_dis,heading,boundry)
     # Detection of Outer and Inner corner
     bool_outer_corner = is_outer_corner()
     bool_inner_corner = is_inner_corner()
@@ -130,7 +127,7 @@ def take_action():
             State 1 Wall found - Following Wall
             State 2 Pattern sequence reached - Rotating
     """
-    global regions_, index, last_kinds_of_wall, index_state_outer_inner, state_outer_inner, loop_index, loop_index_outer_corner 
+    global regions_, index, last_kinds_of_wall, index_state_outer_inner, state_outer_inner, loop_index, loop_index_outer_corner
     
     global wall_dist, max_speed, direction, p, d, angle, dist_min, wall_found, rotating, bool_outer_corner, bool_inner_corner
 
@@ -147,14 +144,17 @@ def take_action():
     rotate_sequence_W = ['I', 'C', 'I', 'C']
 
     if rotating == 1:
+        # pass
         state_description = 'case 2 - rotating'
         change_state(2)
         if(regions['left'] < wall_dist or regions['right'] < wall_dist):
             rotating = 0
     elif regions['fright'] == inf and regions['front'] == inf and regions['right'] == inf and regions['bright'] == inf and regions['fleft'] == inf and regions['left'] == inf and regions['bleft'] == inf:
+        # pass
         state_description = 'case 0 - random wandering'
         change_state(0)
     elif (loop_index == loop_index_outer_corner) and (rotate_sequence_V1 == state_outer_inner or rotate_sequence_V2 == state_outer_inner or rotate_sequence_W == state_outer_inner):
+        # pass
         state_description = 'case 2 - rotating'
         change_direction()
         state_outer_inner = [ 0, 0,  0, 'C']
@@ -168,12 +168,12 @@ def random_wandering():
     This function defines the linear.x and angular.z velocities for the random wandering of the robot.
     Returns:
             Twist(): msg with angular and linear velocities to be published
-                    msg.linear.x -> [0.1, 0.15]
+                    msg.linear.x -> [0.1, 0.3]
                     msg.angular.z -> [-1, 1]
     """
     global direction, last_vel
     msg = Twist()
-    msg.linear.x = max(min( last_vel[0] + random.uniform(-0.01,0.01),0.15),0.1)
+    msg.linear.x = max(min( last_vel[0] + random.uniform(-0.01,0.01),0.3),0.1)
     msg.angular.z= max(min( last_vel[1] + random.uniform(-0.1,0.1),1),-1)
     if msg.angular.z == 1 or msg.angular.z == -1:
         msg.angular.z = 0
@@ -189,34 +189,20 @@ def following_wall():
                     msg.linear.x -> 0; 0.5max_speed; 0.4max_speed
                     msg.angular.z -> PD controller response
     """
-    global r,wall_dist, max_speed, direction, p, d, angle, dist_min, dist_front, e, diff_e, angle_min
+    global wall_dist, max_speed, direction, p, d, angle, dist_min, dist_front, e, diff_e, angle_min
     msg = Twist()
-    
-    if dist_front < wall_dist+.12:
+    if dist_front < wall_dist:
         msg.linear.x = 0
-        # wall_dist +=.04
-        r=1
-        # print("stage 1")
     elif dist_front < wall_dist*2:
-        msg.linear.x = 0.4*max_speed
-        # print("stage 2")
+        msg.linear.x = 0.5*max_speed
     elif abs(angle_min) > 1.75:
-        msg.linear.x = 0.2*max_speed
-        # print("stage 3")
+        msg.linear.x = 0.4*max_speed
     else:
         msg.linear.x = max_speed
-        r=0
-    # z= .3 if r==1 else max(min(direction*(p*e+d*diff_e) + angle*(angle_min-((math.pi)/2)*direction), 2.5), -2.5)
-    z= .2 if r==1 else max(min(direction*(p*e+d*diff_e) + angle*(angle_min-((math.pi)/2)*direction), .5), -.5)
-    msg.angular.z =  z#*1.2 if r==1 else z
-    # print 'Turn Left angular z, linear x %f - %f' % (msg.angular.z, msg.linear.x),"angle",abs(angle_min)
-    # now=rospy.Time(0)
-    # listener.waitForTransform("/map", "/base_link",now,rospy.Duration(4.0))
-    # (trans, rot) = listener.lookupTransform("/map", "/base_link", now)
-    # xx,yy=trans[0],trans[1]
-    # _,_,yaww=euler_from_quaternion(rot)
-    # c_cordinates=(round(xx*4.)/4.,round(yy*4.)/4.)
-
+    msg.angular.z = max(min(direction*(p*e+d*diff_e) + angle*(angle_min-((math.pi)/2)*direction), 2.5), -2.5)
+    # msg.linear.x=0 if dist_front> wall_dist*2 else msg.linear.x
+    #print 'Turn Left angular z, linear x %f - %f' % (msg.angular.z, msg.linear.x)
+    
     return msg
 
 def change_direction():
@@ -243,7 +229,7 @@ def rotating():
     global direction
     msg = Twist()
     msg.linear.x = 0
-    msg.angular.z = direction*1
+    msg.angular.z = direction*2
     return msg
 
 
@@ -297,119 +283,45 @@ def is_inner_corner():
             print 'It is a inner corner'
     return bool_inner_corner
 
-def mains(tr,T,f,drn,left_d=True):
-    global pub_, active_, hz, loop_index,direction,regions_
-    direction = drn
-    di=1 if left_d==True else -1 # this is important to see wheter we are covering left or right   
-    pub_ = rospy.Publisher('/cmd_vel', Twist, queue_size=1)
-    sub = rospy.Subscriber('/scan', LaserScan, clbk_laser)
-    print 'Code from call is running,direction:',direction
+def stop():
+    msg = Twist()
+    msg.linear.x = 0
+    msg.angular.z = 0
+    return msg
+
+
+def follow_wall():
+    global pub_, active_, hz, loop_index    
+#     rospy.init_node('reading_laser')    
+    pub_ = rospy.Publisher('/cmd_vel', Twist, queue_size=1)    
+    sub = rospy.Subscriber("/mybot/laser/scan", LaserScan, clbk_laser)    
+#     print 'Code is running'
+
     rate = rospy.Rate(hz)
-    # tr=tr
-    # T=T
-    # f=f
-    print(f)
-    filled_crd = spatial.KDTree(f[:])
-    # ox,oy,oyaw=tr(T)
-    # ycord=[i[1] for i in f]
     while True:
-    # while not rospy.is_shutdown():
+    #     while not rospy.is_shutdown():
         loop_index = loop_index + 1
         msg = Twist()
-        
-        x,y,yaw=tr(T)
-        dis=filled_crd.query([(x,y)])[0][0]
-        print("x,t dis form mains",round(x,2),round(y,2),round(dis,2))
-        if dis<0.1:
-            msg.angular.z =0
-            msg.linear.x=0
-            pub_.publish(msg) 
-            print("I came")
-            return yaw
 
         # State Dispatcher
         if state_ == 0:
+            # msg = stop()
             msg = random_wandering()
-        elif state_ == 1:
+        if state_ == 1:
             msg = following_wall()
+        
         elif state_ == 2:
+            # msg = stop()
             msg = rotating()
         else:
             rospy.logerr('Unknown state!')
-        print("executing wall",state_)
-        pub_.publish(msg)       
-        rate.sleep()
-        # x,y,yaw=tr(T)
-        # print("x,t,yaw form mains",round(x,2),round(y,2),yaw)
-        # dis=filled_crd.query([(x,y)])[0][0]
-        # return msg
+            msg = stop()
+        #     msg.linear.x = 0
+        #     msg.angular.z = 0
         
-        
-
-
-def straight_follow(tr,T,cx,cy,x_dis,y_dis,heading,boun):
-    global pub_, active_, hz, loop_index 
-    pub_ = rospy.Publisher('/cmd_vel', Twist, queue_size=1)
-    sub = rospy.Subscriber('/scan', LaserScan, clbk_laser)
-    # print 'Code from call is running'
-    rate = rospy.Rate(hz)
-    while True:
-        loop_index = loop_index + 1
-        msg = Twist()
-        xx,yy,yaww=tr(T)
-        boun.append((xx,yy))
-        xc_dis,yc_dis=xx-cx,yy-cy
-        if (abs(xc_dis)>=abs(x_dis) and abs(yc_dis)>=abs(y_dis)):
-            msg.angular.z =0
-            msg.linear.x=0
-            pub_.publish(msg) 
-            return boun,0
-        if heading==0:
-            if yy<y_dis:
-                print("value-exeeding")
-                msg.angular.z =0
-                msg.linear.x=0
-                pub_.publish(msg)
-                rate.sleep()
-                return boun,-1
-                # break
-        elif heading==90:
-            if xx>x_dis:
-                print("value-exeeding")
-                msg.angular.z =0
-                msg.linear.x=0
-                pub_.publish(msg)
-                rate.sleep()
-                return boun,-1
-        elif heading==180:
-            if yy>y_dis:
-                print("value-exeeding")
-                msg.angular.z =0
-                msg.linear.x=0
-                pub_.publish(msg)
-                rate.sleep()
-                return boun,-1
-        elif heading==270:
-            if xx<x_dis:
-                print("value-exeeding")
-                msg.angular.z =0
-                msg.linear.x=0
-                pub_.publish(msg)
-                rate.sleep()
-                return boun,-1
-
-        if state_ == 0:
-            msg = random_wandering()
-        elif state_ == 1:
-            msg = following_wall()
-        elif state_ == 2:
-            msg = rotating()
-        else:
-            rospy.logerr('Unknown state!')
-        print("executing wall and state",state_,round(xx,2),round(yy,2))
         # return msg
         pub_.publish(msg)
-
+        
         rate.sleep()
 
 # if __name__ == '__main__':
