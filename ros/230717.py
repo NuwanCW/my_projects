@@ -8,7 +8,7 @@ run these files first
 https://answers.ros.org/question/300480/building-open_gmapping-from-source-on-melodicubuntu-1804/
 '''
 from sensor_msgs.msg import LaserScan
-from scipy import spatial
+# from scipy import spatial
 import numpy as np
 from geometry_msgs.msg import Twist
 from tf.transformations import euler_from_quaternion, quaternion_from_euler
