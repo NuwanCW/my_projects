@@ -3,7 +3,7 @@
 run these files first
 1. roslaunch mybot_gazebo mybot_world.launch
 2.roslaunch mybot_description mybot_rviz_gmapping.launch
-3.roslaunch mybot_description mybot_rviz_gmapping.launch this is not right
+3.roslaunch mybot_description mybot_rviz_gmapping.launch this is not right jjhj
 ** follow this to install gmapping
 https://answers.ros.org/question/300480/building-open_gmapping-from-source-on-melodicubuntu-1804/
 '''
