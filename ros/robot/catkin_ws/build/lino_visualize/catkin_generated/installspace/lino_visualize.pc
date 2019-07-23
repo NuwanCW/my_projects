@@ -1,0 +1,8 @@
+prefix=/home/withana/catkin_ws/install
+
+Name: lino_visualize
+Description: Description of lino_visualize
+Version: 0.0.0
+Cflags: 
+Libs: -L/home/withana/catkin_ws/install/lib 
+Requires: 
