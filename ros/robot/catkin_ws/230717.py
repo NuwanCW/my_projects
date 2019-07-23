@@ -25,10 +25,8 @@ import json
 import time
 import random
 import math
-# import sys
-# sys.path.append("/home/nuwan/projects/ros/custom_modules/")
 
-# sys.path.insert(0, )
+
 controller = PID(2.30, 0.8, 1.3, .8, -.8)
 velocity_message = Twist()
 
@@ -59,9 +57,9 @@ def transformations(ret=False):
         trans[1] * 20.) / 20.
     _, _, current_yaw = euler_from_quaternion(rot)
     current_xy = (current_x, current_y)
+    current_point = (current_x, current_y, current_yaw)
     if ret == True:
-        return round(current_x * 20.) / 20., round(
-            current_y * 20.) / 20., current_yaw
+        return current_point
 
 
 # move robot forward
@@ -88,9 +86,25 @@ def go_xy(x, y):
                 degrees(error_angle)) <= 12 else np.sign(error_angle) * 0.4
         velocity_publisher.publish(velocity_message)
         loop_rate.sleep()
-        print(current_x, current_y, front)
+        # print(current_x, current_y, front)
         if front < .5:
-            follow_wall()
+            obstacle_start_point = (current_x, current_y)
+            print obstacle_start_point
+            while True:
+                ret = follow_wall(transformations, True, x,
+                                  y, obstacle_start_point)
+                if ret == -1:
+                    print "I got ret"
+                    break
+                # velocity_publisher.publish(m)
+                # loop_rate.sleep()
+                # if (current_x == x or current_y == y):
+                #     stop()
+                #     print(current_x, x, current_y, y)
+                #     break
+                # else:
+                #     print "follwing wall"
+
         if abs(current_x-x) <= .05 and abs(current_y-y) <= .05:
             stop()
             print "done"
@@ -134,15 +148,13 @@ def rotate(angle, dir):
 
 
 def execute_main():
-    go_xy(2, 2)
+    # follow_wall()
+    go_xy(0, 0)
+    # go_xy(4, 4)
+    # go_xy(0, 4)
+    # go_xy(0, 0)
     # go_forward(90, 3)
     print "1st done"
-    # go_forward(180, 3)
-    # print "2nd done"
-    # go_forward(270, 3)
-    # print "3rd done"
-    # go_forward(0, 3)
-    # print "4th done"
 
 
 if __name__ == '__main__':

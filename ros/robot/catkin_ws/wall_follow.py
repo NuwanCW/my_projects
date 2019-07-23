@@ -290,7 +290,7 @@ def stop():
     return msg
 
 
-def follow_wall():
+def follow_wall(tr,T,x_goal,y_goal,point_start):
     global pub_, active_, hz, loop_index    
 #     rospy.init_node('reading_laser')    
     pub_ = rospy.Publisher('/cmd_vel', Twist, queue_size=1)    
@@ -316,13 +316,13 @@ def follow_wall():
         else:
             rospy.logerr('Unknown state!')
             msg = stop()
-        #     msg.linear.x = 0
-        #     msg.angular.z = 0
         
-        # return msg
         pub_.publish(msg)
-        
+            
         rate.sleep()
+        current_point_=tr(T)
+        if current_point_[:2]!=point_start and (current_point_[0] == x_goal or current_point_[1] == y_goal):
+            return -1
 
 # if __name__ == '__main__':
 #     main()
