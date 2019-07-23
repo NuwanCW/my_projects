@@ -17,7 +17,7 @@ from std_srvs.srv import Empty
 from math import radians, degrees, atan2, sqrt, pi, sin, cos
 from pid import PID
 import rospy
-from wall import follow_wall  # , straight_follow
+from wall_follow import follow_wall  # , straight_follow
 import roslib
 import tf
 import traceback
