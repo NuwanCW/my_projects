@@ -12,7 +12,7 @@ import random
 import math
 import time
 
-hz = 20                     # Cycle Frequency
+hz = 30                    # Cycle Frequency
 loop_index = 0              # Number of sampling cycles
 loop_index_outer_corner = 0 # Loop index when the outer corner is detected
 loop_index_inner_corner = 0 # Loop index when the inner corner is detected
@@ -290,7 +290,7 @@ def stop():
     return msg
 
 
-def follow_wall(tr,T,x_goal,y_goal,point_start):
+def follow_wall(tr,x_goal,y_goal,point_start):
     global pub_, active_, hz, loop_index    
 #     rospy.init_node('reading_laser')    
     pub_ = rospy.Publisher('/cmd_vel', Twist, queue_size=1)    
@@ -320,7 +320,7 @@ def follow_wall(tr,T,x_goal,y_goal,point_start):
         pub_.publish(msg)
             
         rate.sleep()
-        current_point_=tr(T)
+        current_point_=tr()
         if current_point_[:2]!=point_start and (current_point_[0] == x_goal or current_point_[1] == y_goal):
             return -1
 
